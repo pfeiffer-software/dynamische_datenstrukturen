@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Einfach verkettete Liste – Patienten Basteltisch</title>
+
+<!-- ==== externe Bibliotheken ==== -->
+<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js/dist/svg.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- ==== Stil (an Notfall.html angelehnt) ==== -->
+<style>
+:root {
+  --bg:#0b1020; --card:#0f172a; --soft:#111827;
+  --text:#e5e7eb; --muted:#94a3b8; --border:#273244;
+  --accent:#22c55e; --danger:#ef4444; --warn:#f59e0b;
+}
+body{
+  margin:0;font-family:system-ui,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+  background:var(--bg);color:var(--text);overflow:hidden;
+}
+h1{text-align:center;font-size:28px;margin:12px 0 0;}
+.sub{text-align:center;color:var(--muted);margin:0 0 14px;font-size:14px;}
+.toolbar{
+  display:flex;justify-content:center;gap:8px;flex-wrap:wrap;
+  padding:10px;background:var(--card);border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+}
+input,select,button{
+  border-radius:8px;border:1px solid var(--border);background:var(--soft);
+  color:var(--text);font-size:14px;padding:8px 10px;
+}
+button{cursor:pointer;transition:transform .05s ease, box-shadow .05s ease;}
+button:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.3);}
+button.primary{background:var(--accent);color:#052e16}
+button.danger{background:var(--danger)}
+button.ghost{background:transparent}
+#workspace{
+  position:relative;
+  width:100%;
+  height:calc(100vh - 160px);
+  overflow:hidden;
+  background:var(--bg);
+}
+.card{
+  position:absolute;
+  width:180px;
+  min-height:90px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  box-shadow:0 4px 12px rgba(0,0,0,.4);
+  padding:10px;
+  user-select:none;
+  cursor:grab;
+}
+.card h3{margin:0 0 4px;font-size:15px;color:#cbd5e1;}
+.card p{margin:2px 0;font-size:13px;color:var(--muted);}
+.connector{
+  position:absolute;width:12px;height:12px;border-radius:50%;
+  top:calc(50% - 6px);cursor:crosshair;
+}
+.connector.left{left:-6px;background:#1e293b;border:2px solid var(--border);}
+.connector.right{right:-6px;background:#991b1b;border:2px solid #7f1d1d;}
+.connector.left.connected{background:#ef4444;}
+#trash{
+  position:absolute;bottom:20px;right:20px;width:80px;height:80px;
+  border-radius:16px;background:#1f2937;
+  display:flex;align-items:center;justify-content:center;
+  font-size:38px;color:var(--danger);
+  border:2px dashed var(--border);
+  transition:background .2s;
+}
+#trash.active{background:#450a0a;}
+#svgCanvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
+</style>
+</head>
+<body>
+
+<h1>Einfach verkettete Liste – Patienten</h1>
+<p class="sub">Erstelle Patienten und verbinde sie mit roten Fäden – jeder kennt nur den nächsten.</p>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <input id="nameInput" placeholder="Name" />
+  <input id="nrInput" placeholder="Versicherungsnr." />
+  <select id="typeInput">
+    <option value="gesetzlich">gesetzlich</option>
+    <option value="privat">privat</option>
+  </select>
+  <button id="addPatient" class="primary">Patient hinzufügen</button>
+  <button id="randomPatient" class="ghost">🎲 Zufälliger Patient</button>
+</div>
+
+<!-- Arbeitsfläche -->
+<div id="workspace">
+  <svg id="svgCanvas"></svg>
+  <div id="trash">🗑️</div>
+</div>
+
+<script>
+// ============= Hilfsdaten =============
+const firstNames=["Anna","Ben","Clara","David","Emma","Felix","Lena","Max","Nora","Paul"];
+const lastNames=["Müller","Schmidt","Schneider","Fischer","Weber","Wagner","Klein","Wolf","Hoffmann","Schröder"];
+const randomName=()=>`${firstNames[Math.floor(Math.random()*firstNames.length)]} ${lastNames[Math.floor(Math.random()*lastNames.length)]}`;
+const randomNr=()=>Math.floor(100000+Math.random()*900000).toString();
+
+// ============= SVG Setup =============
+const draw = SVG().addTo('#svgCanvas').size('100%','100%');
+let lines=[]; // {from: cardA, to: cardB, path:svgObj}
+
+// ============= DOM Elemente =============
+const workspace=document.getElementById("workspace");
+const trash=document.getElementById("trash");
+
+// ============= Patient erstellen =============
+let idCounter=0;
+function createCard(name,nr,type){
+  idCounter++;
+  const card=document.createElement("div");
+  card.className="card";
+  card.dataset.id="card"+idCounter;
+  card.style.left= (100+Math.random()*400)+"px";
+  card.style.top= (100+Math.random()*200)+"px";
+  card.innerHTML=`
+    <h3>${name}</h3>
+    <p>Nr: ${nr}</p>
+    <p>Typ: ${type}</p>
+    <div class="connector left"></div>
+    <div class="connector right"></div>
+  `;
+  workspace.appendChild(card);
+  enableDrag(card);
+  setupConnectors(card);
+  return card;
+}
+
+// ============= Drag & Drop der Karten =============
+function enableDrag(card){
+  interact(card)
+    .draggable({
+    ignoreFrom: '.connector',
+      listeners:{
+        move(event){
+          const x=(parseFloat(card.getAttribute('data-x'))||0)+event.dx;
+          const y=(parseFloat(card.getAttribute('data-y'))||0)+event.dy;
+          card.style.transform=`translate(${x}px, ${y}px)`;
+          card.setAttribute('data-x',x);
+          card.setAttribute('data-y',y);
+          updateLines(card);
+        },
+        end(event){
+          const rect=trash.getBoundingClientRect();
+          const cardRect=card.getBoundingClientRect();
+          if(!(cardRect.right<rect.left || cardRect.left>rect.right || cardRect.bottom<rect.top || cardRect.top>rect.bottom)){
+            trash.classList.add("active");
+            Swal.fire({
+              title:"Karte löschen?",
+              text:"Soll diese Karte wirklich gelöscht werden?",
+              icon:"warning",
+              showCancelButton:true,
+              confirmButtonText:"Ja, löschen",
+              cancelButtonText:"Nein"
+            }).then(res=>{
+              trash.classList.remove("active");
+              if(res.isConfirmed){
+                removeCard(card);
+              }
+            });
+          }
+        }
+      }
+    });
+}
+
+// ============= Karten löschen =============
+function removeCard(card){
+  // verbundene Linien entfernen
+  lines = lines.filter(l=>{
+    if(l.from===card || l.to===card){ l.path.remove(); return false; }
+    return true;
+  });
+  card.remove();
+}
+
+// ============= Verbindung herstellen =============
+let startCard=null;
+function setupConnectors(card){
+  const left=card.querySelector(".connector.left");
+  const right=card.querySelector(".connector.right");
+
+  // Start Verbindung (rechte Seite)
+  right.addEventListener("mousedown",startDragLine);
+  right.addEventListener("touchstart",startDragLine);
+
+  // Verbindung lösen (linke Seite)
+  left.addEventListener("click",()=>{
+    left.classList.remove("connected");
+    lines=lines.filter(l=>{
+      if(l.to===card){ l.path.remove(); return false; }
+      return true;
+    });
+  });
+}
+
+let tempLine=null;
+function startDragLine(e){
+  e.preventDefault();
+  e.stopPropagation(); // verhindert, dass die Karte beim Fadenstart gezogen wird
+
+  startCard = e.target.closest(".card");
+  const startPos = getConnectorPos(startCard.querySelector(".connector.right"));
+
+  tempLine = draw.path(`M${startPos.x},${startPos.y} Q${startPos.x+50},${startPos.y} ${startPos.x+100},${startPos.y}`)
+    .fill('none')
+    .stroke({color:'#ef4444', width:3});
+
+  function moveHandler(ev){
+    const p = getMousePos(ev);
+    const midX = (startPos.x + p.x) / 2;
+    tempLine.plot(`M${startPos.x},${startPos.y} Q${midX},${startPos.y} ${p.x},${p.y}`);
+  }
+
+  function endHandler(ev){
+    const cx = (ev.clientX || (ev.changedTouches && ev.changedTouches[0].clientX));
+    const cy = (ev.clientY || (ev.changedTouches && ev.changedTouches[0].clientY));
+    const endEl = document.elementFromPoint(cx, cy);
+
+    if (endEl && endEl.classList.contains("connector") && endEl.classList.contains("left")) {
+      const endCard = endEl.closest(".card");
+      connectCards(startCard, endCard);
+    }
+
+    if (tempLine) tempLine.remove();
+    workspace.removeEventListener("mousemove", moveHandler);
+    workspace.removeEventListener("touchmove", moveHandler);
+    workspace.removeEventListener("mouseup", endHandler);
+    workspace.removeEventListener("touchend", endHandler);
+  }
+
+  workspace.addEventListener("mousemove", moveHandler);
+  workspace.addEventListener("touchmove", moveHandler);
+  workspace.addEventListener("mouseup", endHandler);
+  workspace.addEventListener("touchend", endHandler);
+}
+
+
+function connectCards(from,to){
+  if(from===to) return;
+  // vorhandene ausgehende Verbindung löschen
+  lines=lines.filter(l=>{
+    if(l.from===from){ l.path.remove(); return false; }
+    return true;
+  });
+  const startPos=getConnectorPos(from.querySelector(".connector.right"));
+  const endPos=getConnectorPos(to.querySelector(".connector.left"));
+  const midX=(startPos.x+endPos.x)/2;
+  const path=draw.path(`M${startPos.x},${startPos.y} Q${midX},${startPos.y} ${endPos.x},${endPos.y}`)
+    .fill('none').stroke({color:'#ef4444',width:3});
+  lines.push({from,to,path});
+  to.querySelector(".connector.left").classList.add("connected");
+}
+
+function updateLines(card){
+  lines.forEach(l=>{
+    if(l.from===card || l.to===card){
+      const startPos=getConnectorPos(l.from.querySelector(".connector.right"));
+      const endPos=getConnectorPos(l.to.querySelector(".connector.left"));
+      const midX=(startPos.x+endPos.x)/2;
+      l.path.plot(`M${startPos.x},${startPos.y} Q${midX},${startPos.y} ${endPos.x},${endPos.y}`);
+    }
+  });
+}
+
+function getConnectorPos(el){
+  const rect = el.getBoundingClientRect();
+  const ws = workspace.getBoundingClientRect();
+  return {
+    x: rect.left - ws.left + rect.width / 2,
+    y: rect.top - ws.top + rect.height / 2
+  };
+}
+
+function getMousePos(ev){
+  const ws = workspace.getBoundingClientRect();
+  let clientX, clientY;
+
+  if (ev.touches && ev.touches.length) {
+    clientX = ev.touches[0].clientX;
+    clientY = ev.touches[0].clientY;
+  } else if (ev.changedTouches && ev.changedTouches.length) {
+    clientX = ev.changedTouches[0].clientX;
+    clientY = ev.changedTouches[0].clientY;
+  } else {
+    clientX = ev.clientX;
+    clientY = ev.clientY;
+  }
+
+  return {
+    x: clientX - ws.left,
+    y: clientY - ws.top
+  };
+}
+
+
+// ============= Toolbar Funktionen =============
+document.getElementById("addPatient").onclick=()=>{
+  const name=document.getElementById("nameInput").value||"Patient "+idCounter;
+  const nr=document.getElementById("nrInput").value||randomNr();
+  const type=document.getElementById("typeInput").value;
+  createCard(name,nr,type);
+};
+document.getElementById("randomPatient").onclick=()=>{
+  const name=randomName();
+  const nr=randomNr();
+  const type=Math.random()<0.5?"gesetzlich":"privat";
+  createCard(name,nr,type);
+};
+</script>
+
+</body>
+</html>
