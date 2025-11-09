@@ -10,44 +10,93 @@
 <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js/dist/svg.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!-- ==== Stil (an Notfall.html angelehnt) ==== -->
+<!-- ==== Stil ==== -->
 <style>
 :root {
   --bg:#0b1020; --card:#0f172a; --soft:#111827;
   --text:#e5e7eb; --muted:#94a3b8; --border:#273244;
   --accent:#22c55e; --danger:#ef4444; --warn:#f59e0b;
+  --blue:#3b82f6; --yellow:#facc15;
 }
 body{
-  margin:0;font-family:system-ui,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
-  background:var(--bg);color:var(--text);overflow:hidden;
+  margin:0;
+  font-family:system-ui,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  overflow:hidden;
 }
-h1{text-align:center;font-size:28px;margin:12px 0 0;}
-.sub{text-align:center;color:var(--muted);margin:0 0 14px;font-size:14px;}
+h1{
+  text-align:center;
+  font-size:28px;
+  margin:12px 0 0;
+}
+.sub{
+  text-align:center;
+  color:var(--muted);
+  margin:0 0 14px;
+  font-size:14px;
+}
+
+/* Toolbar */
 .toolbar{
-  display:flex;justify-content:center;gap:8px;flex-wrap:wrap;
-  padding:10px;background:var(--card);border-top:1px solid var(--border);
+  display:flex;
+  justify-content:center;
+  gap:8px;
+  flex-wrap:wrap;
+  padding:10px;
+  background:var(--card);
+  border-top:1px solid var(--border);
   border-bottom:1px solid var(--border);
 }
-input,select,button{
-  border-radius:8px;border:1px solid var(--border);background:var(--soft);
-  color:var(--text);font-size:14px;padding:8px 10px;
+
+#methodBar{
+  display:flex;
+  justify-content:center;
+  gap:8px;
+  flex-wrap:wrap;
+  padding:6px 10px;
+  background:var(--card);
+  border-bottom:1px solid var(--border);
 }
-button{cursor:pointer;transition:transform .05s ease, box-shadow .05s ease;}
-button:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.3);}
+
+#methodBar button{
+  font-size:12px;
+  padding:4px 10px;
+}
+
+input,select,button{
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:var(--soft);
+  color:var(--text);
+  font-size:14px;
+  padding:8px 10px;
+}
+button{
+  cursor:pointer;
+  transition:transform .05s ease, box-shadow .05s ease;
+}
+button:hover{
+  transform:translateY(-1px);
+  box-shadow:0 3px 10px rgba(0,0,0,.3);
+}
 button.primary{background:var(--accent);color:#052e16}
-button.danger{background:var(--danger)}
 button.ghost{background:transparent}
+
+/* Workspace */
 #workspace{
   position:relative;
   width:100%;
-  height:calc(100vh - 160px);
+  height:calc(100vh - 190px);
   overflow:hidden;
   background:var(--bg);
 }
+
+/* Karten (Patienten) */
 .card{
   position:absolute;
-  width:180px;
-  min-height:90px;
+  width:200px;
+  min-height:120px;
   background:var(--card);
   border:1px solid var(--border);
   border-radius:12px;
@@ -55,32 +104,188 @@ button.ghost{background:transparent}
   padding:10px;
   user-select:none;
   cursor:grab;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
 }
-.card h3{margin:0 0 4px;font-size:15px;color:#cbd5e1;}
-.card p{margin:2px 0;font-size:13px;color:var(--muted);}
+
+.node-header{
+  font-weight:600;
+  font-size:14px;
+  color:#e5e7eb;
+  margin-bottom:2px;
+}
+
+.node-inner{
+  border-radius:8px;
+  border:1px solid var(--border);
+  padding:6px 8px;
+  background:#020617;
+}
+
+.node-inner-title{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+  color:var(--muted);
+  margin-bottom:4px;
+}
+
+.node-inner p{
+  margin:2px 0;
+  font-size:12px;
+  color:var(--muted);
+}
+
+/* Next-Zeiger im Knoten – standardmäßig unsichtbar */
+.node-footer{
+  margin-top:2px;
+  font-size:12px;
+  color:#e5e7eb;
+  display:none; /* nur sichtbar, wenn next auf einen Patienten zeigt */
+}
+.node-footer .next-label{
+  font-weight:600;
+}
+
 .connector{
-  position:absolute;width:12px;height:12px;border-radius:50%;
-  top:calc(50% - 6px);cursor:crosshair;
+  position:absolute;
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  top:calc(50% - 6px);
+  cursor:crosshair;
 }
-.connector.left{left:-6px;background:#1e293b;border:2px solid var(--border);}
-.connector.right{right:-6px;background:#991b1b;border:2px solid #7f1d1d;}
+.connector.left{
+  left:-6px;
+  background:#1e293b;
+  border:2px solid var(--border);
+}
+.connector.right{
+  right:-6px;
+  background:#991b1b;
+  border:2px solid #7f1d1d;
+}
 .connector.left.connected{background:#ef4444;}
+
+/* Null-Karte */
+.null-card{
+  width:100px;
+  min-height:50px;
+  font-size:12px;
+  cursor:default;
+  right:40px;
+  left:auto;
+}
+.null-card h3{
+  margin:4px 0;
+  font-size:14px;
+  text-align:center;
+}
+
+/* Zeiger-Labels (first, last, current) */
+.pointer-label{
+  position:absolute;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:4px 10px;
+  font-size:12px;
+  box-shadow:0 2px 8px rgba(0,0,0,.4);
+  display:flex;
+  align-items:center;
+  gap:4px;
+  white-space:nowrap;
+  display:none; /* unsichtbar, solange kein Ziel */
+  z-index:20;
+}
+.pointer-name{font-weight:600;}
+
+.pointer-label[data-pointer="first"]{
+  border-color:var(--accent);
+}
+.pointer-label[data-pointer="last"]{
+  border-color:var(--blue);
+}
+.pointer-label[data-pointer="current"]{
+  border-color:var(--yellow);
+}
+
+/* Mülleimer */
 #trash{
-  position:absolute;bottom:20px;right:20px;width:80px;height:80px;
-  border-radius:16px;background:#1f2937;
-  display:flex;align-items:center;justify-content:center;
-  font-size:38px;color:var(--danger);
+  position:absolute;
+  bottom:20px;
+  right:20px;
+  width:80px;
+  height:80px;
+  border-radius:16px;
+  background:#1f2937;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:38px;
+  color:var(--danger);
   border:2px dashed var(--border);
   transition:background .2s;
+  z-index:10;
 }
 #trash.active{background:#450a0a;}
-#svgCanvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
+
+#svgCanvas{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+  z-index:5;
+}
+
+/* Overlay für "Neue Liste erstellen" */
+#startOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(15,23,42,0.9);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:50;
+}
+.start-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:24px 28px;
+  box-shadow:0 20px 40px rgba(0,0,0,.6);
+  text-align:center;
+  max-width:360px;
+}
+.start-card h2{
+  margin:0 0 8px;
+  font-size:22px;
+}
+.start-card p{
+  margin:0 0 16px;
+  font-size:14px;
+  color:var(--muted);
+}
 </style>
 </head>
 <body>
 
 <h1>Einfach verkettete Liste – Patienten</h1>
-<p class="sub">Erstelle Patienten und verbinde sie mit roten Fäden – jeder kennt nur den nächsten.</p>
+<p class="sub">Erstelle Patienten, verbinde sie mit roten Fäden und bewege den Zeiger current mit toFirst, toLast und next.</p>
+
+<div id="startOverlay">
+  <div class="start-card">
+    <h2>Neue Liste erstellen</h2>
+    <p>
+      Drücke den Knopf, um eine neue (noch leere) Patientenliste zu starten.
+      Am Anfang sind alle Zeiger unsichtbar (sie zeigen auf kein Patienten-Element).
+    </p>
+    <button id="btnInitList" class="primary">Neue Liste erstellen</button>
+  </div>
+</div>
 
 <!-- Toolbar -->
 <div class="toolbar">
@@ -94,46 +299,302 @@ button.ghost{background:transparent}
   <button id="randomPatient" class="ghost">🎲 Zufälliger Patient</button>
 </div>
 
+<div id="methodBar">
+  <button id="btnToFirst">toFirst()</button>
+  <button id="btnToLast">toLast()</button>
+  <button id="btnNext">next()</button>
+  <button id="btnUndo">↶ Undo</button>
+  <button id="btnRedo">↷ Redo</button>
+</div>
+
+
 <!-- Arbeitsfläche -->
 <div id="workspace">
   <svg id="svgCanvas"></svg>
+
+  <!-- Zeiger-Labels (werden bei Bedarf positioniert) -->
+  <div class="pointer-label" data-pointer="first">
+    <span class="pointer-name">first</span>
+  </div>
+  <div class="pointer-label" data-pointer="last">
+    <span class="pointer-name">last</span>
+  </div>
+  <div class="pointer-label" data-pointer="current">
+    <span class="pointer-name">current</span>
+  </div>
+
   <div id="trash">🗑️</div>
 </div>
 
 <script>
 // ============= Hilfsdaten =============
-const firstNames=["Anna","Ben","Clara","David","Emma","Felix","Lena","Max","Nora","Paul"];
-const lastNames=["Müller","Schmidt","Schneider","Fischer","Weber","Wagner","Klein","Wolf","Hoffmann","Schröder"];
-const randomName=()=>`${firstNames[Math.floor(Math.random()*firstNames.length)]} ${lastNames[Math.floor(Math.random()*lastNames.length)]}`;
-const randomNr=()=>Math.floor(100000+Math.random()*900000).toString();
+const firstNames = [
+  "Anna","Ben","Clara","David","Emma","Felix","Lena","Max","Nora","Paul",
+  "Julia","Tim","Mia","Jonas","Lea","Lukas","Sarah","Tom","Laura","Jan",
+  "Sophie","Leon","Marie","Niklas","Hannah","Noah","Eva","Moritz","Lisa","Philipp"
+];
+
+const lastNames = [
+  "Müller","Schmidt","Schneider","Fischer","Weber","Wagner","Klein","Wolf","Hoffmann","Schröder",
+  "Neumann","Krause","Richter","Meier","Koch","Becker","Bauer","Schulz","Huber","Brandt",
+  "Fuchs","Lehmann","König","Schuster","Jäger","Vogel","Sommer","Peters","Herrmann","Otto"
+];
+
+const randomName = () =>
+  `${firstNames[Math.floor(Math.random()*firstNames.length)]} ${lastNames[Math.floor(Math.random()*lastNames.length)]}`;
+
+const randomNr = () => Math.floor(100000+Math.random()*900000).toString();
 
 // ============= SVG Setup =============
 const draw = SVG().addTo('#svgCanvas').size('100%','100%');
-let lines=[]; // {from: cardA, to: cardB, path:svgObj}
+// List-Verbindungen (next-Zeiger zwischen Patienten)
+let lines = []; // {from: cardA, to: cardB, path:svgObj}
 
-// ============= DOM Elemente =============
-const workspace=document.getElementById("workspace");
-const trash=document.getElementById("trash");
+const workspace  = document.getElementById("workspace");
+const trash      = document.getElementById("trash");
+let listInitialized = false;
+let nullCard = null;
+
+// Zeiger-UI
+const pointerElems = {
+  first:   document.querySelector('.pointer-label[data-pointer="first"]'),
+  last:    document.querySelector('.pointer-label[data-pointer="last"]'),
+  current: document.querySelector('.pointer-label[data-pointer="current"]')
+};
+const pointerInfo = {
+  first:   { target:null, line:null },
+  last:    { target:null, line:null },
+  current: { target:null, line:null }
+};
+
+// ==== Undo / Redo ====
+let undoStack = [];
+let redoStack = [];
+let isRestoring = false;
+
+function buildCurrentState(){
+  if (!listInitialized) return null;
+  const state = { patients: [], connections: [], pointers: {} };
+  const wsRect = workspace.getBoundingClientRect();
+
+  const patients = Array.from(document.querySelectorAll('.card.patient-card'));
+  patients.forEach(c => {
+    const rect = c.getBoundingClientRect();
+    state.patients.push({
+      id: c.dataset.id,
+      order: Number(c.dataset.order),
+      displayName: c.dataset.displayName,
+      nr: c.dataset.nr,
+      type: c.dataset.type,
+      x: rect.left - wsRect.left,
+      y: rect.top  - wsRect.top
+    });
+  });
+
+  lines.forEach(l => {
+    state.connections.push({
+      fromId: l.from.dataset.id,
+      toId:  (l.to === nullCard) ? 'null'
+           : (l.to.classList.contains('patient-card') ? l.to.dataset.id : null)
+    });
+  });
+
+  function ptrId(target){
+    if (!target) return null;
+    if (target === nullCard) return 'null';
+    if (target.classList.contains('patient-card')) return target.dataset.id;
+    return null;
+  }
+
+  state.pointers = {
+    first:   ptrId(pointerInfo.first.target),
+    last:    ptrId(pointerInfo.last.target),
+    current: ptrId(pointerInfo.current.target)
+  };
+
+  return state;
+}
+
+function updateUndoRedoButtons(){
+  const undoBtn = document.getElementById("btnUndo");
+  const redoBtn = document.getElementById("btnRedo");
+  if (!undoBtn || !redoBtn) return;
+  undoBtn.disabled = undoStack.length === 0;
+  redoBtn.disabled = redoStack.length === 0;
+}
+
+function captureState(){
+  if (!listInitialized || isRestoring) return;
+  const state = buildCurrentState();
+  if (!state) return;
+  undoStack.push(state);
+  if (undoStack.length > 50) undoStack.shift();
+  // neue Aktion löscht die Redo-Historie
+  redoStack = [];
+  updateUndoRedoButtons();
+}
+
+function restoreState(state){
+  if (!state) return;
+  isRestoring = true;
+
+  // Karten & Linien entfernen
+  const oldCards = document.querySelectorAll('.card.patient-card, .card.null-card');
+  oldCards.forEach(c => c.remove());
+  lines.forEach(l => l.path.remove());
+  lines = [];
+  nullCard = null;
+
+  // null-Karte neu erzeugen
+  nullCard = createNullCard();
+
+  // Patienten neu erzeugen
+  let maxOrder = -1;
+  state.patients.forEach(p => {
+    const card = document.createElement("div");
+    card.className = "card patient-card";
+    card.dataset.id = p.id;
+    card.dataset.order = p.order;
+    card.dataset.displayName = p.displayName;
+    card.dataset.nr = p.nr;
+    card.dataset.type = p.type;
+
+    card.style.left = p.x + "px";
+    card.style.top  = p.y + "px";
+    card.setAttribute('data-x', 0);
+    card.setAttribute('data-y', 0);
+    card.style.transform = 'translate(0px,0px)';
+
+    card.innerHTML = `
+      <div class="node-header">Patient ${p.order}</div>
+      <div class="node-inner">
+        <div class="node-inner-title">Content</div>
+        <p>Name: ${p.displayName}</p>
+        <p>Nr: ${p.nr}</p>
+        <p>Typ: ${p.type}</p>
+      </div>
+      <div class="node-footer">
+        Next: <span class="next-label"></span>
+      </div>
+      <div class="connector left"></div>
+      <div class="connector right"></div>
+    `;
+    workspace.appendChild(card);
+    enableDrag(card);
+    setupConnectors(card);
+    if (p.order > maxOrder) maxOrder = p.order;
+  });
+  idCounter = maxOrder + 1;
+
+  // Verbindungen neu aufbauen
+  state.connections.forEach(cn => {
+    const from = document.querySelector(`.card.patient-card[data-id="${cn.fromId}"]`);
+    const to = cn.toId === 'null'
+      ? nullCard
+      : document.querySelector(`.card.patient-card[data-id="${cn.toId}"]`);
+    if (from && to){
+      connectCards(from, to);
+    }
+  });
+
+  // Zeiger wiederherstellen
+  function idToTarget(id){
+    if (id === null) return null;
+    if (id === 'null') return nullCard;
+    return document.querySelector(`.card.patient-card[data-id="${id}"]`) || null;
+  }
+
+  setPointer('first',   idToTarget(state.pointers.first));
+  setPointer('last',    idToTarget(state.pointers.last));
+  setPointer('current', idToTarget(state.pointers.current));
+
+  layoutPointerLines();
+  updateNextTexts();
+
+  isRestoring = false;
+  updateUndoRedoButtons();
+}
+
+function undo(){
+  if (undoStack.length === 0) return;
+  const current = buildCurrentState();
+  const prev = undoStack.pop();
+  if (current) {
+    redoStack.push(current);
+  }
+  restoreState(prev);
+}
+
+function redo(){
+  if (redoStack.length === 0) return;
+  const current = buildCurrentState();
+  const next = redoStack.pop();
+  if (current) {
+    undoStack.push(current);
+  }
+  restoreState(next);
+}
+
+
 
 // ============= Patient erstellen =============
-let idCounter=0;
-function createCard(name,nr,type){
-  idCounter++;
-  const card=document.createElement("div");
-  card.className="card";
-  card.dataset.id="card"+idCounter;
-  card.style.left= (100+Math.random()*400)+"px";
-  card.style.top= (100+Math.random()*200)+"px";
-  card.innerHTML=`
-    <h3>${name}</h3>
-    <p>Nr: ${nr}</p>
-    <p>Typ: ${type}</p>
+let idCounter = 0;
+
+function createCard(displayName, nr, type){
+  const index = idCounter++;  // Patient-Nummer 0,1,2,...
+
+  const card = document.createElement("div");
+  card.className = "card patient-card";
+  card.dataset.id    = "card" + index;
+    card.dataset.order = index;
+    card.dataset.displayName = displayName;
+    card.dataset.nr  = nr;
+    card.dataset.type = type;
+
+
+  card.style.left = (100 + Math.random()*400) + "px";
+  card.style.top  = (140 + Math.random()*200) + "px";
+
+  card.innerHTML = `
+    <div class="node-header">Patient ${index}</div>
+
+    <div class="node-inner">
+      <div class="node-inner-title">Content</div>
+      <p>Name: ${displayName}</p>
+      <p>Nr: ${nr}</p>
+      <p>Typ: ${type}</p>
+    </div>
+
+    <div class="node-footer">
+      Next: <span class="next-label"></span>
+    </div>
+
     <div class="connector left"></div>
     <div class="connector right"></div>
   `;
+
   workspace.appendChild(card);
   enableDrag(card);
   setupConnectors(card);
+
+  // KEIN connect und KEIN recompute hier – das macht der Aufrufer
+  return card;
+}
+
+// Null-Knoten
+function createNullCard(){
+  const card = document.createElement("div");
+  card.className = "card null-card";
+  card.style.top  = "240px";
+
+  card.innerHTML = `
+    <h3>null</h3>
+    <div class="connector left"></div>
+  `;
+  workspace.appendChild(card);
+
+  setupConnectors(card);  // nur als Ziel
+
   return card;
 }
 
@@ -141,19 +602,20 @@ function createCard(name,nr,type){
 function enableDrag(card){
   interact(card)
     .draggable({
-    ignoreFrom: '.connector',
+      ignoreFrom: '.connector',
       listeners:{
         move(event){
-          const x=(parseFloat(card.getAttribute('data-x'))||0)+event.dx;
-          const y=(parseFloat(card.getAttribute('data-y'))||0)+event.dy;
-          card.style.transform=`translate(${x}px, ${y}px)`;
+          const x = (parseFloat(card.getAttribute('data-x'))||0) + event.dx;
+          const y = (parseFloat(card.getAttribute('data-y'))||0) + event.dy;
+          card.style.transform = `translate(${x}px, ${y}px)`;
           card.setAttribute('data-x',x);
           card.setAttribute('data-y',y);
           updateLines(card);
+          layoutPointerLines();
         },
         end(event){
-          const rect=trash.getBoundingClientRect();
-          const cardRect=card.getBoundingClientRect();
+          const rect     = trash.getBoundingClientRect();
+          const cardRect = card.getBoundingClientRect();
           if(!(cardRect.right<rect.left || cardRect.left>rect.right || cardRect.bottom<rect.top || cardRect.top>rect.bottom)){
             trash.classList.add("active");
             Swal.fire({
@@ -177,38 +639,49 @@ function enableDrag(card){
 
 // ============= Karten löschen =============
 function removeCard(card){
-  // verbundene Linien entfernen
+    captureState(); 
   lines = lines.filter(l=>{
-    if(l.from===card || l.to===card){ l.path.remove(); return false; }
+    if (l.from === card || l.to === card) {
+      l.path.remove();
+      return false;
+    }
     return true;
   });
   card.remove();
+  recomputePointers();
 }
 
 // ============= Verbindung herstellen =============
-let startCard=null;
+let startCard = null;
+let tempLine  = null;
+
 function setupConnectors(card){
-  const left=card.querySelector(".connector.left");
-  const right=card.querySelector(".connector.right");
+  const left  = card.querySelector(".connector.left");
+  const right = card.querySelector(".connector.right");
 
-  // Start Verbindung (rechte Seite)
-  right.addEventListener("mousedown",startDragLine);
-  right.addEventListener("touchstart",startDragLine);
+  if (right) {
+    right.addEventListener("mousedown", startDragLine);
+    right.addEventListener("touchstart", startDragLine);
+  }
 
-  // Verbindung lösen (linke Seite)
-  left.addEventListener("click",()=>{
-    left.classList.remove("connected");
-    lines=lines.filter(l=>{
-      if(l.to===card){ l.path.remove(); return false; }
-      return true;
+  if (left) {
+    left.addEventListener("click", () => {
+      left.classList.remove("connected");
+      lines = lines.filter(l => {
+        if (l.to === card) {
+          l.path.remove();
+          return false;
+        }
+        return true;
+      });
+      recomputePointers();
     });
-  });
+  }
 }
 
-let tempLine=null;
 function startDragLine(e){
   e.preventDefault();
-  e.stopPropagation(); // verhindert, dass die Karte beim Fadenstart gezogen wird
+  e.stopPropagation();
 
   startCard = e.target.closest(".card");
   const startPos = getConnectorPos(startCard.querySelector(".connector.right"));
@@ -246,40 +719,88 @@ function startDragLine(e){
   workspace.addEventListener("touchend", endHandler);
 }
 
-
 function connectCards(from,to){
   if(from===to) return;
-  // vorhandene ausgehende Verbindung löschen
-  lines=lines.filter(l=>{
-    if(l.from===from){ l.path.remove(); return false; }
+  captureState();
+  // vorhandene ausgehende Verbindung von from löschen
+  lines = lines.filter(l=>{
+    if(l.from === from){
+      l.path.remove();
+      return false;
+    }
     return true;
   });
-  const startPos=getConnectorPos(from.querySelector(".connector.right"));
-  const endPos=getConnectorPos(to.querySelector(".connector.left"));
-  const midX=(startPos.x+endPos.x)/2;
-  const path=draw.path(`M${startPos.x},${startPos.y} Q${midX},${startPos.y} ${endPos.x},${endPos.y}`)
-    .fill('none').stroke({color:'#ef4444',width:3});
+
+  const startPos = getConnectorPos(from.querySelector(".connector.right"));
+  const endPos   = getConnectorPos(to.querySelector(".connector.left"));
+  const midX     = (startPos.x+endPos.x)/2;
+
+  const path = draw.path(`M${startPos.x},${startPos.y} Q${midX},${startPos.y} ${endPos.x},${endPos.y}`)
+    .fill('none')
+    .stroke({color:'#ef4444',width:3});
+
   lines.push({from,to,path});
-  to.querySelector(".connector.left").classList.add("connected");
+  if (to.querySelector(".connector.left")) {
+    to.querySelector(".connector.left").classList.add("connected");
+  }
+
+  recomputePointers();
 }
 
+// ============= Linien-Updates & Next-Text =============
 function updateLines(card){
   lines.forEach(l=>{
     if(l.from===card || l.to===card){
-      const startPos=getConnectorPos(l.from.querySelector(".connector.right"));
-      const endPos=getConnectorPos(l.to.querySelector(".connector.left"));
-      const midX=(startPos.x+endPos.x)/2;
+      const startPos = getConnectorPos(l.from.querySelector(".connector.right"));
+      const endPos   = getConnectorPos(l.to.querySelector(".connector.left"));
+      const midX     = (startPos.x+endPos.x)/2;
       l.path.plot(`M${startPos.x},${startPos.y} Q${midX},${startPos.y} ${endPos.x},${endPos.y}`);
     }
   });
 }
 
+function updateNextTexts(){
+  const cards = Array.from(document.querySelectorAll('.card.patient-card'));
+
+  cards.forEach(card => {
+    const footer = card.querySelector('.node-footer');
+    const span   = card.querySelector('.next-label');
+    if (!footer || !span) return;
+
+    // ausgehende Kante von diesem Patienten suchen
+    const edge = lines.find(l => l.from === card);
+
+    if (!edge) {
+      // kein next-Zeiger -> nichts anzeigen
+      footer.style.display = 'none';
+      return;
+    }
+
+    if (edge.to === nullCard) {
+      // zeigt auf null -> "Next: null"
+      span.textContent = 'null';
+      footer.style.display = 'block';
+    } else if (edge.to && edge.to.classList.contains('patient-card')) {
+      // zeigt auf anderen Patienten -> "Next: Patient X"
+      const header = edge.to.querySelector('.node-header');
+      const title  = header ? header.textContent.trim() : 'Patient ?';
+      span.textContent = title;
+      footer.style.display = 'block';
+    } else {
+      // irgendwas anderes -> ausblenden
+      footer.style.display = 'none';
+    }
+  });
+}
+
+
+// ============= Hilfsfunktionen =============
 function getConnectorPos(el){
   const rect = el.getBoundingClientRect();
-  const ws = workspace.getBoundingClientRect();
+  const ws   = workspace.getBoundingClientRect();
   return {
     x: rect.left - ws.left + rect.width / 2,
-    y: rect.top - ws.top + rect.height / 2
+    y: rect.top  - ws.top  + rect.height / 2
   };
 }
 
@@ -304,20 +825,431 @@ function getMousePos(ev){
   };
 }
 
+// ============= Zeiger-Logik (first, last, current) =============
 
-// ============= Toolbar Funktionen =============
-document.getElementById("addPatient").onclick=()=>{
-  const name=document.getElementById("nameInput").value||"Patient "+idCounter;
-  const nr=document.getElementById("nrInput").value||randomNr();
-  const type=document.getElementById("typeInput").value;
-  createCard(name,nr,type);
+// pointerName: "first" | "last" | "current"
+function setPointer(pointerName, cardOrNull){
+  const info  = pointerInfo[pointerName];
+  const label = pointerElems[pointerName];
+
+  // alte Pfeillinie löschen
+  if(info.line){
+    info.line.remove();
+    info.line = null;
+  }
+  info.target = cardOrNull;
+
+  if(!cardOrNull){
+    // kein Ziel -> Zeiger unsichtbar
+    label.style.display = 'none';
+    return;
+  }
+
+  // Zeiger sichtbar, später per layoutPointerLines positioniert
+  label.style.display = 'flex';
+  if(label.parentElement !== workspace){
+    workspace.appendChild(label);
+  }
+}
+
+function layoutPointerLines(){
+  const wsRect = workspace.getBoundingClientRect();
+
+  // alte Pfeile löschen
+  ['first','last','current'].forEach(name=>{
+    const info = pointerInfo[name];
+    if(info.line){
+      info.line.remove();
+      info.line = null;
+    }
+  });
+
+  // Gruppen pro Zielkarte bilden
+  const groups = new Map(); // card -> [pointerName,...]
+  ['first','last','current'].forEach(name=>{
+    const info = pointerInfo[name];
+    if(info.target){
+      if(!groups.has(info.target)) groups.set(info.target, []);
+      groups.get(info.target).push(name);
+    }
+  });
+
+  groups.forEach((pointerNames, card)=>{
+    const cardRect   = card.getBoundingClientRect();
+    const cardCenterX= cardRect.left - wsRect.left + cardRect.width/2;
+    const cardTopY   = cardRect.top  - wsRect.top;
+
+    const n = pointerNames.length;
+    let offsets;
+    if(n===1) offsets=[0];
+    else if(n===2) offsets=[-40,40];
+    else offsets=[-60,0,60];
+
+    pointerNames.forEach((name, idx)=>{
+      const label = pointerElems[name];
+      const info  = pointerInfo[name];
+
+      const offsetX = offsets[idx];
+      label.style.position = 'absolute';
+      label.style.left = '0px';
+      label.style.top  = '0px';
+      const w = label.offsetWidth;
+      const h = label.offsetHeight;
+
+      const centerX  = cardCenterX + offsetX;
+      const labelTop = cardTopY - 50 - h;
+      const labelLeft= centerX - w/2;
+
+      label.style.left = `${labelLeft}px`;
+      label.style.top  = `${labelTop}px`;
+
+      const startX = centerX;
+      const startY = labelTop + h;
+      const endX   = centerX;
+      const endY   = cardTopY;
+
+      let color;
+      if(name === 'first')   color = '#22c55e';
+      else if(name === 'last')   color = '#3b82f6';
+      else                     color = '#facc15';
+
+      const pathStr =
+        `M${startX},${startY} L${endX},${endY}` +
+        ` M${endX-5},${endY-8} L${endX},${endY} L${endX+5},${endY-8}`;
+
+      info.line = draw.path(pathStr)
+        .fill('none')
+        .stroke({color, width:2.5});
+    });
+  });
+}
+
+function resetAllPointers(){
+  if (nullCard){
+    setPointer('first',   nullCard);
+    setPointer('last',    nullCard);
+    setPointer('current', nullCard);
+  } else {
+    setPointer('first',   null);
+    setPointer('last',    null);
+    setPointer('current', null);
+  }
+}
+
+// Liste leer?
+function listIsEmpty(){
+  const cards = document.querySelectorAll(".card.patient-card");
+  return cards.length === 0;
+}
+
+function recomputePointers(){
+    if (isRestoring) {
+    updateNextTexts();
+    return;
+  }
+
+  const cards = Array.from(document.querySelectorAll('.card.patient-card'));
+
+  // Fall 1: keine Patienten
+  if (cards.length === 0){
+    resetAllPointers();
+    layoutPointerLines();
+    updateNextTexts();
+    return;
+  }
+
+  // Nur Kanten Patient -> Patient
+  const patientLines = lines.filter(l =>
+    l.from.classList.contains('patient-card') &&
+    l.to.classList.contains('patient-card')
+  );
+
+  const indeg  = new Map();
+  const outdeg = new Map();
+  cards.forEach(c => { indeg.set(c,0); outdeg.set(c,0); });
+  patientLines.forEach(l=>{
+    indeg.set(l.to,   (indeg.get(l.to)   || 0) + 1);
+    outdeg.set(l.from,(outdeg.get(l.from)|| 0) + 1);
+  });
+
+  let firstCard = null;
+  let lastCard  = null;
+
+  if (patientLines.length === 0){
+    // keine Patient-Patient-Kanten: nimm ältesten Knoten als first/last
+    firstCard = cards.reduce(
+      (min,c) => !min || (+c.dataset.order < +min.dataset.order) ? c : min,
+      null
+    );
+    lastCard = firstCard;
+  } else {
+    // first: indeg == 0 und outdeg > 0
+    cards.forEach(c=>{
+      const i = indeg.get(c) || 0;
+      const o = outdeg.get(c) || 0;
+      if(i === 0 && o > 0 && !firstCard){
+        firstCard = c;
+      }
+    });
+    if(!firstCard){
+      firstCard = cards.reduce(
+        (min,c) => !min || (+c.dataset.order < +min.dataset.order) ? c : min,
+        null
+      );
+    }
+
+    // last: von first aus den next-Zeigern folgen
+    const nextMap = new Map();
+    patientLines.forEach(l=>{
+      if(!nextMap.has(l.from)){
+        nextMap.set(l.from, l.to);
+      }
+    });
+
+    lastCard = firstCard;
+    const visited = new Set();
+    while(nextMap.has(lastCard) && !visited.has(lastCard)){
+      visited.add(lastCard);
+      lastCard = nextMap.get(lastCard);
+    }
+  }
+
+  // first wird immer am rekonstruierten ersten Knoten ausgerichtet
+  setPointer('first', firstCard);
+
+  // last nur dann neu setzen, wenn der bisherige last-Zeiger ungültig ist
+  const currentLast = pointerInfo.last.target;
+  const lastStillValid =
+    currentLast &&
+    currentLast.classList.contains('patient-card') &&
+    cards.includes(currentLast);
+
+  if (!lastStillValid){
+    setPointer('last', lastCard);
+  }
+
+  // current: muss auf einen existierenden Patienten zeigen, sonst auf first
+  const cur = pointerInfo.current.target;
+  if (!cur || !cur.classList.contains('patient-card') || !cards.includes(cur)){
+    setPointer('current', firstCard);
+  }
+
+  // Patienten löschen, auf die KEIN anderer Patient zeigt
+  // (indeg == 0) und auf die auch kein first/last/current zeigt.
+  const toDelete = [];
+  cards.forEach(c=>{
+    const i = indeg.get(c) || 0;
+    const isPointer =
+      c === pointerInfo.first.target ||
+      c === pointerInfo.last.target  ||
+      c === pointerInfo.current.target;
+
+    if (i === 0 && !isPointer){
+      toDelete.push(c);
+    }
+  });
+
+  if (toDelete.length > 0){
+    toDelete.forEach(c => removeCard(c));
+    return; 
+  }
+
+  layoutPointerLines();
+  updateNextTexts();
+}
+
+
+// ============= Methoden: toFirst, toLast, next (current bewegen) =============
+function listToFirst(){
+  if (listIsEmpty()) return;
+  const firstCard = pointerInfo.first.target;
+  if (firstCard){
+    setPointer("current", firstCard);
+    layoutPointerLines();
+  }
+}
+
+function listToLast(){
+  if (listIsEmpty()) return;
+  const lastCard = pointerInfo.last.target;
+  if (lastCard){
+    setPointer("current", lastCard);
+    layoutPointerLines();
+  }
+}
+
+function listNext(){
+  if (listIsEmpty()){
+    setPointer("current", null);
+    layoutPointerLines();
+    return;
+  }
+
+  const cur = pointerInfo.current.target;
+
+  // kein aktuelles Objekt -> bleibt ohne Zeiger
+  if (!cur || !cur.classList.contains("patient-card")){
+    setPointer("current", null);
+    layoutPointerLines();
+    return;
+  }
+
+  // Nachfolger suchen (nur Patient als Ziel)
+  const edge = lines.find(l => l.from === cur && l.to.classList.contains("patient-card"));
+
+  if (edge && edge.to){
+    setPointer("current", edge.to);
+  } else {
+    // kein nächster Patient -> current zeigt auf kein Element (Zeiger verschwindet)
+    setPointer("current", null);
+  }
+  layoutPointerLines();
+}
+
+// ============= Liste initialisieren =============
+function initList(){
+  if (listInitialized) return;
+  listInitialized = true;
+  document.getElementById("startOverlay").style.display = "none";
+
+  nullCard = createNullCard();
+  resetAllPointers();
+  layoutPointerLines();
+}
+
+document.getElementById("btnInitList").addEventListener("click", initList);
+
+document.getElementById("addPatient").onclick = () => {
+  if (!listInitialized){
+    Swal.fire("Liste noch nicht erstellt",
+              "Drücke zuerst „Neue Liste erstellen“, bevor du Patienten hinzufügst.",
+              "info");
+    return;
+  }
+
+  const hadPatients = document.querySelectorAll(".card.patient-card").length > 0;
+  const oldLast = hadPatients ? pointerInfo.last.target : null;
+
+  const inputName   = document.getElementById("nameInput").value.trim();
+  const displayName = inputName || randomName();
+  const nr          = document.getElementById("nrInput").value || randomNr();
+  const type        = document.getElementById("typeInput").value;
+
+    const card = createCard(displayName, nr, type);
+
+  // --- Positionierung: in eine Reihe einfügen ---
+  const wsRect = workspace.getBoundingClientRect();
+
+  if (!hadPatients) {
+    // erster Patient: feste Startposition
+    card.style.left = '80px';
+    card.style.top  = '220px';
+  } else if (oldLast && oldLast.classList.contains("patient-card")) {
+    // weitere Patienten: rechts neben dem bisherigen last
+    const lastRect = oldLast.getBoundingClientRect();
+    const spacing  = 40; // Abstand zwischen den Karten
+
+    const newLeft = lastRect.right - wsRect.left + spacing;
+    const newTop  = lastRect.top   - wsRect.top;
+
+    card.style.left = `${newLeft}px`;
+    card.style.top  = `${newTop}px`;
+  }
+  // Start ohne zusätzliche Translation
+  card.setAttribute('data-x', 0);
+  card.setAttribute('data-y', 0);
+  card.style.transform = 'translate(0px,0px)';
+
+  // --- Verbindungen setzen ---
+  if (!hadPatients){
+    if (nullCard) connectCards(card, nullCard);
+  } else {
+    if (oldLast && oldLast.classList.contains("patient-card")){
+      connectCards(oldLast, card);
+    }
+    if (nullCard) connectCards(card, nullCard);
+  }
+
+  // neuer Patient soll ab jetzt "der letzte" sein
+  setPointer('last', card);
+  layoutPointerLines();
+
 };
-document.getElementById("randomPatient").onclick=()=>{
-  const name=randomName();
-  const nr=randomNr();
-  const type=Math.random()<0.5?"gesetzlich":"privat";
-  createCard(name,nr,type);
+
+
+document.getElementById("randomPatient").onclick = () => {
+  if (!listInitialized){
+    Swal.fire("Liste noch nicht erstellt",
+              "Drücke zuerst „Neue Liste erstellen“, bevor du Patienten hinzufügst.",
+              "info");
+    return;
+  }
+
+  const hadPatients = document.querySelectorAll(".card.patient-card").length > 0;
+  const oldLast = hadPatients ? pointerInfo.last.target : null;
+
+  const displayName = randomName();
+  const nr          = randomNr();
+  const type        = Math.random() < 0.5 ? "gesetzlich" : "privat";
+
+    const card = createCard(displayName, nr, type);
+
+  // --- Positionierung: in eine Reihe einfügen ---
+  const wsRect = workspace.getBoundingClientRect();
+
+  if (!hadPatients) {
+    card.style.left = '80px';
+    card.style.top  = '220px';
+  } else if (oldLast && oldLast.classList.contains("patient-card")) {
+    const lastRect = oldLast.getBoundingClientRect();
+    const spacing  = 40;
+
+    const newLeft = lastRect.right - wsRect.left + spacing;
+    const newTop  = lastRect.top   - wsRect.top;
+
+    card.style.left = `${newLeft}px`;
+    card.style.top  = `${newTop}px`;
+  }
+  card.setAttribute('data-x', 0);
+  card.setAttribute('data-y', 0);
+  card.style.transform = 'translate(0px,0px)';
+
+  // --- Verbindungen setzen ---
+  if (!hadPatients){
+    if (nullCard) connectCards(card, nullCard);
+  } else {
+    if (oldLast && oldLast.classList.contains("patient-card")){
+      connectCards(oldLast, card);
+    }
+    if (nullCard) connectCards(card, nullCard);
+  }
+
+  // neuer Patient ist jetzt das letzte Element
+  setPointer('last', card);
+  layoutPointerLines();
+
 };
+
+
+document.getElementById("btnToFirst").addEventListener("click", () => {
+  captureState();
+  listToFirst();
+});
+document.getElementById("btnToLast").addEventListener("click", () => {
+  captureState();
+  listToLast();
+});
+document.getElementById("btnNext").addEventListener("click", () => {
+  captureState();
+  listNext();
+});
+
+document.getElementById("btnUndo").addEventListener("click", undo);
+document.getElementById("btnRedo").addEventListener("click", redo);
+
+// Buttons initial updaten
+updateUndoRedoButtons();
+
 </script>
 
 </body>
