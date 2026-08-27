@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stack im Paketlager</title>
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --muted: #94a3b8;
+      --text: #e5e7eb;
+      --accent: #22c55e;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --soft: #1f2937;
+      --border: #374151;
+
+      --box-light: #d9b27c;
+      --box-mid: #c89555;
+      --box-dark: #9d6e3d;
+      --tape: #f0d9a8;
+      --steel: #64748b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(34,197,94,.06), transparent 24%),
+        radial-gradient(circle at 100% 100%, rgba(245,158,11,.07), transparent 25%),
+        var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
+    }
+
+    .wrap {
+      max-width: 1020px;
+      margin: 24px auto;
+      padding: 0 16px 24px;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin: 0 0 8px;
+      text-align: center;
+    }
+
+    .subtitle {
+      margin: 0 0 16px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 8px 20px rgb(0 0 0 / 0.35);
+    }
+
+    .scenario {
+      margin-bottom: 14px;
+      padding: 14px 16px;
+      background: linear-gradient(180deg, rgba(11,18,32,.95), rgba(15,23,42,.95));
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: #cbd5e1;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .scenario strong { color: var(--text); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(340px, 0.95fr) minmax(320px, 1.05fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .leftCol, .rightCol { min-width: 0; }
+    .rightCol { display: flex; flex-direction: column; }
+
+    .stack-area {
+      min-height: 390px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      padding: 44px 16px 16px;
+      border: 1px dashed var(--border);
+      border-radius: 16px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)),
+        linear-gradient(to top, rgba(120,113,108,.18) 0 58px, transparent 58px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stack-area::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to right,
+        rgba(148,163,184,.045) 0 1px,
+        transparent 1px 80px
+      );
+      pointer-events: none;
+    }
+
+    .stack {
+      width: 320px;
+      min-height: 300px;
+      display: flex;
+      flex-direction: column-reverse;
+      justify-content: flex-start;
+      gap: 10px;
+      padding: 0 18px 14px;
+      border-left: 8px solid var(--steel);
+      border-right: 8px solid var(--steel);
+      border-bottom: 10px solid var(--steel);
+      border-radius: 0 0 12px 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .stack::before {
+      content: "Lagerkanal – Zugriff nur von oben";
+      position: absolute;
+      top: -36px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+      letter-spacing: .02em;
+    }
+
+    .stack::after {
+      content: "↓";
+      position: absolute;
+      top: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #cbd5e1;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .box {
+      position: relative;
+      min-height: 72px;
+      padding: 14px 18px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, var(--box-light), var(--box-mid));
+      border: 1px solid var(--box-dark);
+      color: #3b2b1a;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.24), 0 10px 18px rgba(0,0,0,.20);
+      overflow: hidden;
+      transition: transform .28s ease, opacity .28s ease, box-shadow .28s ease;
+      text-align: center;
+    }
+
+    .box::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 26px;
+      transform: translateX(-50%);
+      background: linear-gradient(180deg, #f7e6bc, var(--tape));
+      box-shadow: inset 1px 0 0 rgba(126,87,39,.18), inset -1px 0 0 rgba(126,87,39,.18);
+      opacity: .95;
+    }
+
+    .box.new { transform: translateY(-7px); }
+
+    .box.top {
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 3px rgba(245,158,11,.16), 0 10px 18px rgba(0,0,0,.20);
+    }
+
+    .packageName {
+      position: relative;
+      z-index: 1;
+      font-weight: 800;
+      letter-spacing: .01em;
+      font-size: 18px;
+    }
+
+    .emptyText {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      margin: auto;
+      background: rgba(15,23,42,.55);
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px dashed var(--border);
+    }
+
+    .hint {
+      margin: 12px 0 0;
+      font-size: 13px;
+      color: #cbd5e1;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+
+    input, button {
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--soft);
+      color: var(--text);
+      font: inherit;
+    }
+
+    input {
+      padding: 10px 12px;
+      flex: 1;
+      min-width: 180px;
+    }
+
+    button {
+      padding: 10px 14px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      font-weight: 700;
+    }
+
+    button.primary { background: var(--accent); color: #052e16; }
+    button.danger { background: var(--danger); }
+    button.warn { background: var(--warn); color: #2a1700; }
+    button.ghost { background: transparent; border-color: var(--border); }
+
+    .methodHint {
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #0b1220;
+      color: #cbd5e1;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .methodHint code {
+      color: #fde68a;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace;
+      font-size: 12px;
+    }
+
+    .log {
+      height: 220px;
+      overflow: auto;
+      background: #0b1220;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace;
+      font-size: 12px;
+      margin-top: 0;
+    }
+
+    .log p { margin: 4px 0; }
+    .return { color: #86efac; }
+    .muted { color: var(--muted); }
+
+    @media (max-width: 780px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      .wrap { max-width: 100%; }
+      .stack { width: 280px; }
+      .box { min-height: 78px; }
+      .packageName { font-size: 17px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Stack im Paketlager</h1>
+    <p class="subtitle">Erkunde die vier Methoden an einem realistischen Paketstapel.</p>
+
+    <div class="card">
+      <div class="scenario">
+        <strong>Situation:</strong>
+        In einem engen Lagerkanal werden Pakete übereinander gestapelt.
+        Der Lagerroboter kann nur von oben auf den Stapel zugreifen.
+        Erkunde durch Ausprobieren, wie die vier Methoden des Systems funktionieren.
+      </div>
+
+      <div class="layout">
+        <div class="leftCol">
+          <div class="stack-area">
+            <div class="stack" id="stack">
+              <div class="box">
+                <span class="packageName">Paket A</span>
+              </div>
+
+              <div class="box">
+                <span class="packageName">Paket B</span>
+              </div>
+
+              <div class="box top">
+                <span class="packageName">Paket C</span>
+              </div>
+            </div>
+          </div>
+
+          <p class="hint">
+            Hinweis:
+            <strong>Bearbeite mit Hilfe dieses Programms die Aufgaben auf dem Arbeitsblatt.</strong>
+          </p>
+        </div>
+
+        <div class="rightCol">
+          <p class="methodHint">
+            Teste nacheinander die vier Methoden <code>push</code>, <code>pop</code>, <code>top</code> und <code>isEmpty</code>.
+            Beobachte genau, wie sich der Paketstapel verändert und was im Protokoll ausgegeben wird.
+          </p>
+
+          <div class="row">
+            <input id="itemInput" placeholder="ContentType pContent" aria-label="Parameter für push">
+            <button class="primary" onclick="pushFromInput()">push</button>
+            <button class="danger" onclick="popStack()">pop</button>
+            <button class="warn" onclick="topStack()">top</button>
+            <button class="ghost" onclick="isEmptyStack()">isEmpty</button>
+          </div>
+
+          <div class="log" id="log" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  var state = {
+    arr: ["Paket A", "Paket B", "Paket C"]
+  };
+
+  function getElement(id) {
+    return document.getElementById(id);
+  }
+
+  function log(message, cssClass) {
+    var logEl = getElement("log");
+    var p = document.createElement("p");
+
+    if (cssClass) {
+      p.className = cssClass;
+    }
+
+    p.textContent = message;
+    logEl.appendChild(p);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function render(animateNew) {
+    var stackEl = getElement("stack");
+    stackEl.innerHTML = "";
+
+    if (state.arr.length === 0) {
+      var empty = document.createElement("div");
+      empty.className = "emptyText";
+      empty.textContent = "Kein Paket im Stack";
+      stackEl.appendChild(empty);
+      return;
+    }
+
+    var i;
+    for (i = 0; i < state.arr.length; i++) {
+      var box = document.createElement("div");
+      box.className = "box";
+
+      if (i === state.arr.length - 1) {
+        box.className += " top";
+        if (animateNew) {
+          box.className += " new";
+        }
+      }
+
+      var name = document.createElement("span");
+      name.className = "packageName";
+      name.textContent = state.arr[i];
+
+      box.appendChild(name);
+      stackEl.appendChild(box);
+    }
+
+    if (animateNew) {
+      window.setTimeout(function () {
+        var boxes = stackEl.getElementsByClassName("box");
+        if (boxes.length > 0) {
+          boxes[boxes.length - 1].className =
+            boxes[boxes.length - 1].className.replace(" new", "");
+        }
+      }, 280);
+    }
+  }
+
+  function pushStack(value) {
+    var v = value;
+    if (v === null || v === undefined) { return; }
+    v = String(v).trim();
+    if (v === "") { return; }
+
+    state.arr.push(v);
+    log('push("' + v + '")');
+    getElement("itemInput").value = "";
+    render(true);
+  }
+
+  function pushFromInput() {
+    pushStack(getElement("itemInput").value);
+  }
+
+  function popStack() {
+    if (state.arr.length === 0) { return; }
+    state.arr.pop();
+    log("pop()");
+    render(false);
+  }
+
+  function topStack() {
+    if (state.arr.length === 0) {
+      log("top(): null", "return");
+      return;
+    }
+    log("top(): " + state.arr[state.arr.length - 1], "return");
+  }
+
+  function isEmptyStack() {
+    if (state.arr.length === 0) {
+      log("isEmpty(): true", "return");
+    } else {
+      log("isEmpty(): false", "return");
+    }
+  }
+
+  function initialise() {
+    state.arr = ["Paket A", "Paket B", "Paket C"];
+    getElement("log").innerHTML = "";
+    render(false);
+  }
+
+  window.onload = initialise;
+
+  getElement("itemInput").onkeydown = function (event) {
+    event = event || window.event;
+    if (event.key === "Enter" || event.keyCode === 13) {
+      pushFromInput();
+    }
+  };
+</script>
+</body>
+</html>
