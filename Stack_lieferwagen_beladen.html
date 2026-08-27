@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stack – Pakete für die Liefertour sortieren</title>
+
+  <style>
+    :root{
+      --bg:#0b1020;
+      --card:#0f172a;
+      --soft:#111827;
+      --text:#e5e7eb;
+      --muted:#94a3b8;
+      --border:#273244;
+
+      --accent:#22c55e;
+      --danger:#ef4444;
+      --warn:#f59e0b;
+      --blue:#38bdf8;
+      --hint:#93c5fd;
+      --code:#a5f3fc;
+
+      --box-light:#d9b27c;
+      --box-mid:#c89555;
+      --box-dark:#9d6e3d;
+      --tape:#f0d9a8;
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+      background:
+        radial-gradient(circle at 0% 0%,rgba(56,189,248,.08),transparent 24%),
+        radial-gradient(circle at 100% 100%,rgba(34,197,94,.06),transparent 25%),
+        var(--bg);
+      color:var(--text);
+    }
+
+    .wrap{
+      max-width:1180px;
+      margin:22px auto;
+      padding:0 16px 30px;
+    }
+
+    h1{
+      text-align:center;
+      font-size:29px;
+      margin:0 0 5px;
+      letter-spacing:-.02em;
+    }
+
+    .sub{
+      text-align:center;
+      color:var(--muted);
+      margin:0 0 16px;
+      line-height:1.45;
+      font-size:14px;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:18px;
+      box-shadow:0 8px 22px rgba(0,0,0,.35);
+    }
+
+    .route{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:8px;
+      margin-bottom:16px;
+    }
+
+    .routeStop{
+      position:relative;
+      min-height:68px;
+      padding:10px 10px 9px 42px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#0b1220;
+    }
+
+    .stopNo{
+      position:absolute;
+      left:10px;
+      top:50%;
+      transform:translateY(-50%);
+      width:24px;
+      height:24px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      background:var(--blue);
+      color:#082f49;
+      font-weight:900;
+      font-size:12px;
+    }
+
+    .routeStop strong{
+      display:block;
+      font-size:13px;
+      margin-bottom:3px;
+    }
+
+    .routeStop span{
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+
+    .goal{
+      color:#cbd5e1;
+      font-size:13px;
+      line-height:1.4;
+      max-width:760px;
+    }
+
+    .rightgroup{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    button{
+      border-radius:10px;
+      border:1px solid transparent;
+      background:var(--soft);
+      color:var(--text);
+      padding:8px 11px;
+      cursor:pointer;
+      font:inherit;
+      font-weight:700;
+    }
+
+    button:hover{filter:brightness(1.07)}
+    button:active{transform:translateY(1px)}
+    button.primary{background:var(--accent);color:#052e16}
+    button.danger{background:var(--danger);color:white}
+    button.warn{background:var(--warn);color:#2a1700}
+    button.blue{background:var(--blue);color:#082f49}
+    button.ghost{background:transparent;border-color:var(--border)}
+    button.dim{opacity:.45;cursor:not-allowed}
+
+    .memory{
+      min-height:49px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:14px;
+      padding:9px 12px;
+      background:#0b1220;
+      border:1px solid var(--border);
+      border-radius:12px;
+      font-size:13px;
+    }
+
+    .memoryLabel{
+      color:var(--muted);
+      white-space:nowrap;
+    }
+
+    .memoryValue{
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      color:#fde68a;
+      font-weight:700;
+    }
+
+    .stacks{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:14px;
+    }
+
+    .lane{
+      min-width:0;
+      padding:12px;
+      border:1px dashed var(--border);
+      border-radius:14px;
+      background:rgba(11,18,32,.55);
+    }
+
+    .laneHead{
+      margin-bottom:8px;
+    }
+
+    .laneHead h3{
+      margin:0;
+      font-size:17px;
+      color:#e2e8f0;
+    }
+
+    .laneHead p{
+      margin:3px 0 0;
+      color:var(--muted);
+      font-size:11px;
+      min-height:31px;
+    }
+
+    .stackStage{
+      min-height:355px;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      padding:22px 8px 10px;
+      border:1px solid #1e293b;
+      border-radius:12px;
+      background:
+        linear-gradient(to top,rgba(120,113,108,.14) 0 42px,transparent 42px),
+        #0a1120;
+      overflow:hidden;
+    }
+
+    .stackVisual{
+      width:100%;
+      max-width:280px;
+      min-height:290px;
+      display:flex;
+      flex-direction:column-reverse;
+      justify-content:flex-start;
+      gap:7px;
+      padding:0 12px 12px;
+      border-left:6px solid #64748b;
+      border-right:6px solid #64748b;
+      border-bottom:8px solid #64748b;
+      border-radius:0 0 10px 10px;
+      position:relative;
+    }
+
+    .stackVisual::before{
+      content:"↓ Zugriff";
+      position:absolute;
+      top:-23px;
+      left:50%;
+      transform:translateX(-50%);
+      color:#64748b;
+      font-size:10px;
+      font-weight:700;
+    }
+
+    .pkg{
+      position:relative;
+      min-height:48px;
+      padding:9px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      background:linear-gradient(180deg,var(--box-light),var(--box-mid));
+      border:1px solid var(--box-dark);
+      border-radius:9px;
+      color:#3b2b1a;
+      box-shadow:0 5px 10px rgba(0,0,0,.22);
+      overflow:hidden;
+    }
+
+    .pkg::before{
+      content:"";
+      position:absolute;
+      left:50%;
+      top:0;
+      bottom:0;
+      width:18px;
+      transform:translateX(-50%);
+      background:linear-gradient(180deg,#f7e6bc,var(--tape));
+      opacity:.9;
+    }
+
+    .pkgName{
+      position:relative;
+      z-index:1;
+      font-size:12px;
+      font-weight:850;
+      width:100%;
+      text-align:center;
+    }
+
+    .pkg.duplicate{
+      outline:2px dashed #facc15;
+      outline-offset:-4px;
+    }
+
+    .pkg.selected{
+      border-color:#38bdf8;
+      box-shadow:
+        0 0 0 4px rgba(56,189,248,.22),
+        0 8px 16px rgba(0,0,0,.28);
+      transform:translateY(-2px);
+    }
+
+    .pkg.selected::after{
+      content:"ausgewählt";
+      position:absolute;
+      top:5px;
+      right:6px;
+      z-index:2;
+      padding:2px 5px;
+      border-radius:999px;
+      background:#e0f2fe;
+      color:#075985;
+      font-size:8px;
+      font-weight:900;
+      letter-spacing:.02em;
+    }
+
+    button.pending{
+      box-shadow:0 0 0 3px rgba(34,197,94,.28);
+      outline:1px solid #86efac;
+    }
+
+    .empty{
+      margin:auto;
+      color:#64748b;
+      font-size:12px;
+      text-align:center;
+    }
+
+    .buttons{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:7px;
+      margin-top:9px;
+    }
+
+    .buttons button{
+      width:100%;
+      font-size:12px;
+      padding:8px 6px;
+    }
+
+    .status{
+      margin:16px 0 0;
+      min-height:46px;
+      display:none;
+      align-items:center;
+      padding:10px 12px;
+      border-radius:12px;
+      background:rgba(34,197,94,.10);
+      border:1px solid rgba(34,197,94,.35);
+      color:#bbf7d0;
+      font-weight:700;
+      font-size:13px;
+    }
+
+    .status.show{display:flex}
+
+    .bottomGrid{
+      display:grid;
+      grid-template-columns:1.25fr .75fr;
+      gap:14px;
+      margin-top:16px;
+    }
+
+    .sectionTitle{
+      margin:0 0 6px;
+      color:#cbd5e1;
+      font-size:15px;
+    }
+
+    .code{
+      min-height:210px;
+      max-height:320px;
+      overflow:auto;
+      background:#0b1220;
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:10px;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      font-size:12px;
+      line-height:1.5;
+      color:var(--code);
+      white-space:pre-wrap;
+    }
+
+    .help{
+      min-height:210px;
+      max-height:320px;
+      overflow:auto;
+      background:#0b1220;
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:10px;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      font-size:12px;
+      line-height:1.5;
+      color:var(--hint);
+      white-space:pre-wrap;
+    }
+
+    .copyRow{
+      display:flex;
+      gap:8px;
+      margin-top:8px;
+    }
+
+    code{
+      color:#fde68a;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+    }
+
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:26px;
+      transform:translate(-50%,20px);
+      z-index:1000;
+      max-width:min(620px,calc(100vw - 32px));
+      padding:12px 16px;
+      border-radius:12px;
+      background:#172033;
+      border:1px solid #475569;
+      color:#e2e8f0;
+      box-shadow:0 14px 34px rgba(0,0,0,.4);
+      font-size:13px;
+      font-weight:700;
+      opacity:0;
+      pointer-events:none;
+      transition:.22s ease;
+      text-align:center;
+    }
+
+    .toast.show{
+      opacity:1;
+      transform:translate(-50%,0);
+    }
+
+    .modalBackdrop{
+      position:fixed;
+      inset:0;
+      z-index:1100;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:rgba(2,6,23,.72);
+      backdrop-filter:blur(3px);
+    }
+
+    .modalBackdrop.show{
+      display:flex;
+    }
+
+    .successModal{
+      width:min(500px,100%);
+      padding:24px;
+      border-radius:18px;
+      background:#0f172a;
+      border:1px solid rgba(34,197,94,.45);
+      box-shadow:0 24px 70px rgba(0,0,0,.5);
+      text-align:center;
+    }
+
+    .successIcon{
+      width:58px;
+      height:58px;
+      display:grid;
+      place-items:center;
+      margin:0 auto 12px;
+      border-radius:50%;
+      background:rgba(34,197,94,.14);
+      border:1px solid rgba(34,197,94,.45);
+      color:#86efac;
+      font-size:30px;
+      font-weight:900;
+    }
+
+    .successModal h2{
+      margin:0 0 9px;
+      font-size:24px;
+    }
+
+    .successModal p{
+      margin:0 0 16px;
+      color:#cbd5e1;
+      line-height:1.5;
+      font-size:14px;
+    }
+
+    .successModal .modalButtons{
+      display:flex;
+      gap:8px;
+      justify-content:center;
+      flex-wrap:wrap;
+    }
+
+    @media(max-width:900px){
+      .route{grid-template-columns:1fr}
+      .routeStop{min-height:48px}
+      .stacks{grid-template-columns:1fr}
+      .stackStage{min-height:300px}
+      .bottomGrid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+  <h1>Pakete für die Liefertour sortieren</h1>
+  <p class="sub">
+    Nutze ausschließlich die Methoden <code>push</code>, <code>pop</code>, <code>top</code> und <code>isEmpty</code>.<br>
+    Jede Aktion erzeugt unten passenden Java-Code.
+  </p>
+
+  <div class="card">
+
+    <div class="route">
+      <div class="routeStop"><div class="stopNo">1</div><strong>Schule</strong><span>Paket Schule</span></div>
+      <div class="routeStop"><div class="stopNo">2</div><strong>Bahnhof</strong><span>Paket Bahnhof</span></div>
+      <div class="routeStop"><div class="stopNo">3</div><strong>Rathaus</strong><span>Paket Rathaus</span></div>
+      <div class="routeStop"><div class="stopNo">4</div><strong>Markt</strong><span>Paket Markt</span></div>
+      <div class="routeStop"><div class="stopNo">5</div><strong>Sporthalle</strong><span>Paket Sporthalle</span></div>
+    </div>
+
+    <div class="topbar">
+      <div class="goal">
+        <strong>Ziel:</strong> Am Ende liegen alle fünf Pakete im <code>fahrzeugStack</code>.
+        Das Paket für <strong>Stopp 1 muss ganz oben</strong> liegen, darunter Stopp 2, Stopp 3, Stopp 4 und ganz unten Stopp 5.
+        Der <code>paketStack</code> und der <code>hilfsStack</code> sollen dann leer sein.
+      </div>
+
+      <div class="rightgroup">
+        <button id="undoBtn" class="ghost" title="Rückgängig">↺</button>
+        <button id="redoBtn" class="ghost" title="Wiederholen">↻</button>
+        <button id="resetBtn" class="danger">Alles zurücksetzen</button>
+      </div>
+    </div>
+
+    <div class="memory">
+      <span class="memoryLabel">Ausgewähltes Paket:</span>
+      <span id="memoryValue" class="memoryValue">noch nichts ausgewählt</span>
+    </div>
+
+    <div class="stacks">
+      <section class="lane">
+        <div class="laneHead">
+          <h3>paketStack</h3>
+          <p>Hier stehen zu Beginn alle Pakete bereit.</p>
+        </div>
+        <div class="stackStage">
+          <div class="stackVisual" id="stackA"></div>
+        </div>
+        <div class="buttons">
+          <button class="blue" id="a_top">top()</button>
+          <button class="primary" id="a_push">push(...)</button>
+          <button class="danger" id="a_pop">pop()</button>
+          <button class="ghost" id="a_empty">isEmpty()</button>
+        </div>
+      </section>
+
+      <section class="lane">
+        <div class="laneHead">
+          <h3>hilfsStack</h3>
+          <p>Zwischenablage für Pakete, die vorübergehend im Weg liegen.</p>
+        </div>
+        <div class="stackStage">
+          <div class="stackVisual" id="stackH"></div>
+        </div>
+        <div class="buttons">
+          <button class="blue" id="h_top">top()</button>
+          <button class="primary" id="h_push">push(...)</button>
+          <button class="danger" id="h_pop">pop()</button>
+          <button class="ghost" id="h_empty">isEmpty()</button>
+        </div>
+      </section>
+
+      <section class="lane">
+        <div class="laneHead">
+          <h3>fahrzeugStack</h3>
+          <p>Hier sollen die Pakete passend zur Lieferroute gestapelt werden.</p>
+        </div>
+        <div class="stackStage">
+          <div class="stackVisual" id="stackF"></div>
+        </div>
+        <div class="buttons">
+          <button class="blue" id="f_top">top()</button>
+          <button class="primary" id="f_push">push(...)</button>
+          <button class="danger" id="f_pop">pop()</button>
+          <button class="ghost" id="f_empty">isEmpty()</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="status" id="successBox">
+      ✓ Geschafft! Der fahrzeugStack ist für die Route richtig sortiert.
+    </div>
+
+    <div class="bottomGrid">
+      <div>
+        <h3 class="sectionTitle">Java Code</h3>
+        <div class="code" id="codeBox">// Java-Code-Generator
+// Starte mit Methodenaufrufen …</div>
+        <div class="copyRow">
+          <button class="primary" id="copyBtn">Java Code kopieren</button>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="sectionTitle">Hinweise und Rückmeldungen</h3>
+        <div class="help" id="helpBox">// Du kannst entweder zuerst top() und danach push(...) wählen – oder zuerst push(...) und anschließend mit top() das Objekt festlegen.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="idleToast" class="toast">
+  Achte darauf: Am Ende müssen <code>paketStack</code> und <code>hilfsStack</code> leer sein.
+</div>
+
+<div id="successModalBackdrop" class="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="successTitle">
+  <div class="successModal">
+    <div class="successIcon">✓</div>
+    <h2 id="successTitle">Du hast es geschafft!</h2>
+    <p>
+      Alle Pakete liegen richtig im <code>fahrzeugStack</code> und die beiden anderen Stacks sind leer.<br><br>
+      <strong>Kopiere jetzt deinen Java-Code und füge ihn auf dem Arbeitsblatt ein.</strong>
+    </p>
+    <div class="modalButtons">
+      <button id="modalCopyBtn" class="primary">Java Code kopieren</button>
+      <button id="closeSuccessModal" class="ghost">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+
+  // Arrays werden intern von unten nach oben gespeichert.
+  // Beispiel ["Sporthalle","Markt"] bedeutet: Sporthalle unten, Markt oben.
+  const INITIAL = [
+    {id:"S2", name:"Paket Bahnhof", stop:2, place:"Bahnhof"},
+    {id:"S3", name:"Paket Rathaus", stop:3, place:"Rathaus"},
+    {id:"S4", name:"Paket Markt", stop:4, place:"Markt"},
+    {id:"S5", name:"Paket Sporthalle", stop:5, place:"Sporthalle"},
+    {id:"S1", name:"Paket Schule", stop:1, place:"Schule"}
+  ];
+
+  // Ziel im fahrzeugStack: unten Stopp 5 ... oben Stopp 1
+  const GOAL_IDS = ["S5","S4","S3","S2","S1"];
+
+  const state = {
+    A: [],
+    H: [],
+    F: [],
+    lastTop: null, // {source:"paketStack", stackKey:"A", package:obj}
+    pendingPushKey: null,
+    placeholderIndex: null,
+    successShown: false,
+    code: [],
+    history: [],
+    future: []
+  };
+
+  const $ = id => document.getElementById(id);
+
+  const stackEls = {
+    A:$("stackA"),
+    H:$("stackH"),
+    F:$("stackF")
+  };
+
+  const stackNames = {
+    A:"paketStack",
+    H:"hilfsStack",
+    F:"fahrzeugStack"
+  };
+
+  function clonePackage(p){
+    return {id:p.id, name:p.name, stop:p.stop, place:p.place};
+  }
+
+  function shuffledInitial(){
+    const arr=INITIAL.map(clonePackage);
+
+    // Fisher-Yates
+    for(let i=arr.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      const temp=arr[i];
+      arr[i]=arr[j];
+      arr[j]=temp;
+    }
+
+    // Nicht zufällig bereits perfekt starten.
+    const idsNow=arr.map(p=>p.id);
+    let alreadyGoal=true;
+    for(let i=0;i<GOAL_IDS.length;i++){
+      if(idsNow[i]!==GOAL_IDS[i]){
+        alreadyGoal=false;
+        break;
+      }
+    }
+
+    if(alreadyGoal){
+      const temp=arr[0];
+      arr[0]=arr[1];
+      arr[1]=temp;
+    }
+
+    return arr;
+  }
+
+  let idleTimer=null;
+  let toastTimer=null;
+
+  function showIdleToast(){
+    if(isExactGoal()) return;
+
+    const toast=$("idleToast");
+    toast.classList.add("show");
+
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(()=>{
+      toast.classList.remove("show");
+    },3800);
+  }
+
+  function resetIdleTimer(){
+    clearTimeout(idleTimer);
+
+    if(isExactGoal()) return;
+
+    idleTimer=setTimeout(()=>{
+      showIdleToast();
+    },10000);
+  }
+
+  function registerActivity(){
+    $("idleToast").classList.remove("show");
+    resetIdleTimer();
+  }
+
+  function cloneState(){
+    return {
+      A:state.A.map(clonePackage),
+      H:state.H.map(clonePackage),
+      F:state.F.map(clonePackage),
+      lastTop:state.lastTop ? {
+        source:state.lastTop.source,
+        stackKey:state.lastTop.stackKey,
+        package:clonePackage(state.lastTop.package)
+      } : null,
+      pendingPushKey:state.pendingPushKey,
+      placeholderIndex:state.placeholderIndex,
+      successShown:state.successShown,
+      code:[...state.code],
+      help:$("helpBox").textContent
+    };
+  }
+
+  function restoreState(s){
+    state.A=s.A.map(clonePackage);
+    state.H=s.H.map(clonePackage);
+    state.F=s.F.map(clonePackage);
+    state.lastTop=s.lastTop ? {
+      source:s.lastTop.source,
+      stackKey:s.lastTop.stackKey,
+      package:clonePackage(s.lastTop.package)
+    } : null;
+    state.pendingPushKey=s.pendingPushKey;
+    state.placeholderIndex=s.placeholderIndex;
+    state.successShown=s.successShown;
+    state.code=[...s.code];
+    $("helpBox").textContent=s.help;
+    render();
+  }
+
+  function beforeChange(){
+    state.history.push(cloneState());
+    state.future=[];
+  }
+
+  function setHelp(text){
+    $("helpBox").textContent=text;
+  }
+
+  function stackByKey(key){
+    return state[key];
+  }
+
+  function render(){
+    renderStack("A");
+    renderStack("H");
+    renderStack("F");
+    renderMemory();
+    renderCode();
+    renderPendingPush();
+    updateUndoRedo();
+    checkGoal();
+  }
+
+  function allOccurrences(id){
+    let count=0;
+    ["A","H","F"].forEach(key=>{
+      state[key].forEach(p=>{ if(p.id===id) count++; });
+    });
+    return count;
+  }
+
+  function renderStack(key){
+    const el=stackEls[key];
+    const arr=state[key];
+    el.innerHTML="";
+
+    if(arr.length===0){
+      const empty=document.createElement("div");
+      empty.className="empty";
+      empty.textContent="[leer]";
+      el.appendChild(empty);
+      return;
+    }
+
+    arr.forEach((pkg,index)=>{
+      const box=document.createElement("div");
+      box.className="pkg";
+
+      if(allOccurrences(pkg.id)>1){
+        box.classList.add("duplicate");
+      }
+
+      const isTop = index===arr.length-1;
+      if(
+        isTop &&
+        state.lastTop &&
+        state.lastTop.stackKey===key &&
+        state.lastTop.package.id===pkg.id
+      ){
+        box.classList.add("selected");
+      }
+
+      const name=document.createElement("span");
+      name.className="pkgName";
+      name.textContent=pkg.name;
+
+      box.appendChild(name);
+      el.appendChild(box);
+    });
+  }
+
+  function renderMemory(){
+    if(!state.lastTop){
+      $("memoryValue").textContent="noch nichts ausgewählt";
+      return;
+    }
+
+    $("memoryValue").textContent =
+      state.lastTop.package.name + " aus " + state.lastTop.source;
+  }
+
+  function renderPendingPush(){
+    ["a_push","h_push","f_push"].forEach(id=>$(id).classList.remove("pending"));
+
+    if(!state.pendingPushKey) return;
+
+    const buttonId =
+      state.pendingPushKey==="A" ? "a_push" :
+      state.pendingPushKey==="H" ? "h_push" : "f_push";
+
+    $(buttonId).classList.add("pending");
+  }
+
+  function renderCode(){
+    $("codeBox").textContent = state.code.length
+      ? state.code.join("\n")
+      : "// Java-Code-Generator\n// Starte mit Methodenaufrufen …";
+  }
+
+  function updateUndoRedo(){
+    $("undoBtn").classList.toggle("dim",state.history.length===0);
+    $("redoBtn").classList.toggle("dim",state.future.length===0);
+  }
+
+  function topAction(key){
+    registerActivity();
+    const arr=stackByKey(key);
+    const name=stackNames[key];
+
+    if(arr.length===0){
+      setHelp(name+" ist leer. top() liefert hier null.");
+      return;
+    }
+
+    // push(...) wurde zuerst gewählt: top() vervollständigt den Aufruf.
+    if(state.pendingPushKey){
+      const targetKey=state.pendingPushKey;
+      const targetName=stackNames[targetKey];
+
+      if(targetKey===key){
+        setHelp(
+          "Quelle und Ziel können hier nicht derselbe Stack sein.\n\n"+
+          "Wähle top() bei einem anderen Stack."
+        );
+        return;
+      }
+
+      beforeChange();
+
+      const pkg=arr[arr.length-1];
+      state.lastTop={
+        source:name,
+        stackKey:key,
+        package:clonePackage(pkg)
+      };
+
+      const target=stackByKey(targetKey);
+      target.push(clonePackage(pkg));
+
+      const line=targetName+".push("+name+".top());";
+
+      if(state.placeholderIndex!==null){
+        state.code[state.placeholderIndex]=line;
+      }else{
+        state.code.push(line);
+      }
+
+      state.pendingPushKey=null;
+      state.placeholderIndex=null;
+
+      setHelp(
+        'Gelesen: "'+pkg.name+'" aus '+name+'.\n\n'+
+        'Die push-Zeile wurde vervollständigt:\n'+
+        line+'\n\n'+
+        'Das Paket liegt momentan in beiden Stacks. '+
+        'Zum echten Umlagern musst du es jetzt noch mit '+name+'.pop() aus der Quelle entfernen.'
+      );
+
+      render();
+      return;
+    }
+
+    beforeChange();
+
+    const pkg=arr[arr.length-1];
+    state.lastTop={
+      source:name,
+      stackKey:key,
+      package:clonePackage(pkg)
+    };
+
+    setHelp(
+      'Gelesen und markiert: "'+pkg.name+'" liegt oben auf dem '+name+'.\n\n'+
+      'Das Paket ist jetzt sichtbar ausgewählt. Drücke anschließend push(...) bei dem Stack, auf den du es legen möchtest.'
+    );
+
+    render();
+  }
+
+  function pushAction(targetKey){
+    registerActivity();
+    const target=stackByKey(targetKey);
+    const targetName=stackNames[targetKey];
+
+    // Noch kein top() gewählt: unvollständige push-Zeile anlegen.
+    if(!state.lastTop){
+      beforeChange();
+
+      if(state.placeholderIndex!==null){
+        state.code.splice(state.placeholderIndex,1);
+      }
+
+      state.pendingPushKey=targetKey;
+      state.code.push(targetName+".push(/* Was soll hinzugefügt werden? */);");
+      state.placeholderIndex=state.code.length-1;
+
+      setHelp(
+        targetName+".push(...) wurde ausgewählt.\n\n"+
+        "Jetzt fehlt noch das Objekt in den Klammern. "+
+        "Drücke top() bei dem Stack, dessen oberstes Paket du auf "+targetName+" legen möchtest."
+      );
+
+      render();
+      return;
+    }
+
+    // top() wurde zuerst gewählt.
+    const sourceKey=state.lastTop.stackKey;
+    const sourceName=state.lastTop.source;
+    const pkg=state.lastTop.package;
+
+    if(sourceKey===targetKey){
+      setHelp(
+        "Das ausgewählte Paket liegt bereits oben auf "+targetName+".\n\n"+
+        "Wähle für push(...) einen anderen Ziel-Stack."
+      );
+      return;
+    }
+
+    const source=stackByKey(sourceKey);
+
+    if(source.length===0 || source[source.length-1].id!==pkg.id){
+      state.lastTop=null;
+      setHelp(
+        "Der zuvor mit top() gelesene Wert ist nicht mehr gültig. "+
+        "Lies das oberste Paket erneut mit top()."
+      );
+      render();
+      return;
+    }
+
+    beforeChange();
+
+    target.push(clonePackage(pkg));
+    state.code.push(
+      targetName+".push("+sourceName+".top());"
+    );
+
+    setHelp(
+      pkg.name+" wurde auf "+targetName+" gelegt.\n\n"+
+      "Wichtig: Das Paket liegt momentan in beiden Stacks. "+
+      "top() hat das Objekt nur geliefert; entfernt wurde es noch nicht. "+
+      "Wenn du wirklich umlagern willst, führe jetzt "+sourceName+".pop() aus."
+    );
+
+    render();
+  }
+
+  function popAction(key){
+    registerActivity();
+    const arr=stackByKey(key);
+    const name=stackNames[key];
+
+    if(arr.length===0){
+      setHelp(name+" ist leer. pop() verändert den Stack nicht.");
+      return;
+    }
+
+    beforeChange();
+
+    const removed=arr[arr.length-1];
+    arr.pop();
+    state.code.push(name+".pop();");
+
+    if(state.lastTop && state.lastTop.stackKey===key){
+      state.lastTop=null;
+    }
+
+    setHelp(
+      removed.name+" wurde vom "+name+" entfernt.\n\n"+
+      "Beachte: pop() liefert keinen Rückgabewert."
+    );
+
+    render();
+  }
+
+  function emptyAction(key){
+    registerActivity();
+    const arr=stackByKey(key);
+    const name=stackNames[key];
+    const result=arr.length===0;
+
+    beforeChange();
+    state.code.push(name+".isEmpty();");
+
+    setHelp(
+      name+".isEmpty() → "+result+"\n\n"+
+      "Der Stack selbst wurde dabei nicht verändert."
+    );
+
+    render();
+  }
+
+  function ids(arr){
+    return arr.map(p=>p.id);
+  }
+
+  function isExactGoal(){
+    if(state.A.length!==0 || state.H.length!==0) return false;
+    if(state.F.length!==GOAL_IDS.length) return false;
+
+    const got=ids(state.F);
+    for(let i=0;i<GOAL_IDS.length;i++){
+      if(got[i]!==GOAL_IDS[i]) return false;
+    }
+
+    // Keine Duplikate
+    const all=[...state.A,...state.H,...state.F].map(p=>p.id);
+    return new Set(all).size===5;
+  }
+
+  function checkGoal(){
+    const solved=isExactGoal();
+
+    $("successBox").classList.toggle("show",solved);
+
+    if(solved){
+      clearTimeout(idleTimer);
+
+      setHelp(
+        "Geschafft!\n\n"+
+        "Der fahrzeugStack ist richtig beladen und paketStack sowie hilfsStack sind leer.\n\n"+
+        "Kopiere jetzt den erzeugten Java-Code und füge ihn auf dem Arbeitsblatt ein."
+      );
+
+      if(!state.successShown){
+        state.successShown=true;
+        $("successModalBackdrop").classList.add("show");
+      }
+    }
+  }
+
+  function reset(){
+    state.A=shuffledInitial();
+    state.H=[];
+    state.F=[];
+    state.lastTop=null;
+    state.pendingPushKey=null;
+    state.placeholderIndex=null;
+    state.successShown=false;
+    state.code=[];
+    state.history=[];
+    state.future=[];
+
+    $("successModalBackdrop").classList.remove("show");
+    $("idleToast").classList.remove("show");
+
+    $("helpBox").textContent =
+      "// Du kannst entweder zuerst top() und danach push(...) wählen – oder zuerst push(...) und anschließend mit top() das Objekt festlegen.";
+    render();
+    resetIdleTimer();
+  }
+
+  // Undo / Redo
+  $("undoBtn").onclick=function(){
+    registerActivity();
+    if(state.history.length===0) return;
+    state.future.push(cloneState());
+    const prev=state.history.pop();
+    restoreState(prev);
+  };
+
+  $("redoBtn").onclick=function(){
+    registerActivity();
+    if(state.future.length===0) return;
+    state.history.push(cloneState());
+    const next=state.future.pop();
+    restoreState(next);
+  };
+
+  $("resetBtn").onclick=function(){
+    registerActivity();
+    reset();
+  };
+
+  // Buttons paketStack
+  $("a_top").onclick=()=>topAction("A");
+  $("a_push").onclick=()=>pushAction("A");
+  $("a_pop").onclick=()=>popAction("A");
+  $("a_empty").onclick=()=>emptyAction("A");
+
+  // Buttons hilfsStack
+  $("h_top").onclick=()=>topAction("H");
+  $("h_push").onclick=()=>pushAction("H");
+  $("h_pop").onclick=()=>popAction("H");
+  $("h_empty").onclick=()=>emptyAction("H");
+
+  // Buttons fahrzeugStack
+  $("f_top").onclick=()=>topAction("F");
+  $("f_push").onclick=()=>pushAction("F");
+  $("f_pop").onclick=()=>popAction("F");
+  $("f_empty").onclick=()=>emptyAction("F");
+
+  async function copyGeneratedCode(button){
+    registerActivity();
+
+    const plain=state.code.length
+      ? state.code.join("\n")
+      : "// Java-Code-Generator\n// Starte mit Methodenaufrufen …";
+
+    try{
+      await navigator.clipboard.writeText(plain);
+    }catch(e){
+      const range=document.createRange();
+      range.selectNodeContents($("codeBox"));
+      const selection=window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.execCommand("copy");
+      selection.removeAllRanges();
+    }
+
+    const old=button.textContent;
+    button.textContent="Kopiert!";
+    setTimeout(()=>button.textContent=old,1200);
+  }
+
+  $("copyBtn").onclick=function(){
+    copyGeneratedCode(this);
+  };
+
+  $("modalCopyBtn").onclick=function(){
+    copyGeneratedCode(this);
+  };
+
+  $("closeSuccessModal").onclick=function(){
+    $("successModalBackdrop").classList.remove("show");
+  };
+
+  $("successModalBackdrop").onclick=function(event){
+    if(event.target===$("successModalBackdrop")){
+      $("successModalBackdrop").classList.remove("show");
+    }
+  };
+
+  // Auch Maus-/Tastaturaktivität setzt den 10-Sekunden-Timer zurück.
+  document.addEventListener("keydown",registerActivity);
+  document.addEventListener("pointerdown",function(event){
+    // Klick auf den Toast selbst zählt ebenfalls als Aktivität.
+    if(event.target) registerActivity();
+  });
+
+  reset();
+})();
+</script>
+</body>
+</html>
